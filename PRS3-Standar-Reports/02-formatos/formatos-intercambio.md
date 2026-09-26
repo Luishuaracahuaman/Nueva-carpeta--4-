@@ -79,3 +79,20 @@ Para garantizar un estándar de comunicación uniforme entre el API Gateway, el 
 | **404 Not Found** | Recurso inexistente | El identificador (ID) o la ruta solicitada no existe en la base de datos del microservicio. |
 | **500 Internal Error**| Falla crítica del servidor | Ocurrió un error inesperado (ej. pérdida de conexión a base de datos o excepción no controlada). La traza técnica se oculta por seguridad. |
 
+
+## 2.5 Criterio de Selección de Formato (Reportes)
+
+El siguiente diagrama detalla el flujo de decisión para la generación y exportación de reportes desde el cliente frontend, dependiendo del módulo y el formato requerido por el usuario[cite: 5, 6].
+
+```mermaid
+graph TD
+    A[Necesidad de reporte] --> B{¿Módulo?}
+    
+    B -- Emergencias --> C{¿Formato?}
+    B -- Recursos --> D{¿Formato?}
+    
+    C -- PDF --> E["jsPDF + autoTable<br>Emergencias: vertical A4"]
+    C -- Excel --> F["SheetJS<br>2 hojas: detalle + bitácora"]
+    
+    D -- PDF --> G["jsPDF + autoTable<br>landscape A4, lazy import"]
+    D -- Excel --> H["SheetJS<br>2 hojas: datos + resumen, la..."]
