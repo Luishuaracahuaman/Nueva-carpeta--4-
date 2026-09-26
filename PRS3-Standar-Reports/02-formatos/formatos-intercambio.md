@@ -1,20 +1,20 @@
 # 2 · Formatos de Intercambio de Datos y Estándares API
 
-A diferencia de las arquitecturas monolíticas o los módulos frontend encargados de exportar documentos (PDF/Excel), los microservicios del backend en FIDEI NEXUS operan exclusivamente como proveedores y consumidores de APIs RESTful. Por lo tanto, el único formato estándar y oficial de intercambio de información es **JSON (JavaScript Object Notation)**.
+A diferencia de las arquitecturas monolíticas o los módulos frontend encargados de exportar documentos (PDF/Excel), los microservicios del backend en el ecosistema **FIDEI NEXUS** operan exclusivamente como proveedores y consumidores de APIs RESTful. Por lo tanto, el único formato estándar y oficial de intercambio de información es **JSON (JavaScript Object Notation)**.
 
 ## 2.1 Tecnologías de Serialización y Mapeo
 
-Para garantizar una comunicación eficiente y reactiva entre el cliente (Frontend), el API Gateway y los microservicios internos, se estandariza el uso de las siguientes herramientas:
+Para garantizar una comunicación eficiente y reactiva entre el cliente (Frontend), el API Gateway y los microservicios internos, el Equipo 3 estandariza el uso de las siguientes herramientas:
 
 | Capa de Aplicación | Tecnología / Librería | Propósito Estándar |
 |--------------------|-----------------------|--------------------|
 | **Capa Web (REST)** | Jackson (`spring-boot-starter-json`) | Serialización y deserialización automática de payloads HTTP. |
-| **Integración Interna** | `WebClient` (Spring WebFlux) | Consumo asíncrono y no bloqueante de APIs entre microservicios (Ej. Pagos consultando a Libros o Personas). |
+| **Integración Interna** | `WebClient` (Spring WebFlux) | Consumo asíncrono y no bloqueante de APIs entre microservicios. |
 | **Capa de Persistencia**| Spring Data R2DBC | Mapeo reactivo entre objetos Java y registros en bases de datos relacionales (PostgreSQL). |
 
 ## 2.2 Estándares de Tipos de Datos y Formateo
 
-El **Equipo 3** establece las siguientes reglas obligatorias de tipado para los dominios bajo su responsabilidad (`vg-ms-booksService` y `vg-ms-paymentService`), aplicables como buena práctica para el resto del ecosistema:
+Para mantener la consistencia de los datos en todos los dominios (`vg-ms-booksService` y `vg-ms-paymentService`), se establecen las siguientes reglas obligatorias de tipado:
 
 1. **Datos Financieros y Monetarios:** 
    * **Regla Estricta:** Queda prohibido el uso de `Double` o `Float` para cálculos financieros debido a la pérdida de precisión por coma flotante.
@@ -27,9 +27,10 @@ El **Equipo 3** establece las siguientes reglas obligatorias de tipado para los 
 
 ## 2.3 Estructura de Contratos JSON (Payloads)
 
-Los microservicios deben definir contratos claros separando los datos físicos (base de datos) de los datos enriquecidos (transitorios).
+Los microservicios deben definir contratos claros separando los datos físicos (base de datos) de los datos enriquecidos (transitorios). 
 
 ### Ejemplo: Dominio de Libros (`vg-ms-booksService`)
+
 El servicio expone la información del catálogo. El payload de respuesta omite metadatos internos e incluye la estructura de autores y categorías.
 
 ```json
@@ -42,8 +43,8 @@ El servicio expone la información del catálogo. El payload de respuesta omite 
   "category": "Tecnología",
   "status": "DISPONIBLE"
 }
-```
 
+```
 ### Ejemplo: Dominio de Pagos (`vg-ms-paymentService`)
 
 El servicio requiere un payload de entrada (POST) estricto para procesar la transacción. Los campos autogenerados (`id`, `createdAt`) no se envían en la petición.
@@ -66,16 +67,15 @@ El servicio requiere un payload de entrada (POST) estricto para procesar la tran
 ```
 ## 2.4 Códigos de Estado HTTP Semánticos
 
-Para que el cliente (Frontend) y el API Gateway puedan orquestar el flujo correctamente, todos los microservicios deben retornar códigos HTTP semánticos y precisos:
+Para garantizar un estándar de comunicación uniforme entre el API Gateway, el Frontend y todos los microservicios del ecosistema FIDEI NEXUS, se establece el uso estricto de los siguientes códigos HTTP:
 
-| Código HTTP | Escenario Estándar | Acción del Backend |
-|-------------|--------------------|--------------------|
-| **200 OK** | Lectura exitosa | Retorna listas o entidades únicas. Una lista vacía retorna `[]` con estado 200, nunca 404. |
-| **201 Created** | Escritura exitosa | Se insertó un nuevo registro (ej. creación de un libro o registro de un pago). |
-| **400 Bad Request** | Fallo de validación | El JSON enviado por el cliente tiene un formato incorrecto o incumple reglas de negocio. |
-| **401 Unauthorized**| Seguridad | Token JWT ausente, inválido o expirado. |
-| **403 Forbidden** | Permisos | Token válido, pero el usuario no posee el rol necesario (ej. intento de borrar un catálogo sin rol `ADMIN`). |
-| **404 Not Found** | Recurso inexistente | Se solicitó un recurso específico por ID que no existe en la base de datos. |
-| **500 Internal Error**| Falla crítica | Caída de base de datos, error de R2DBC o excepción no controlada. La traza de error se oculta por seguridad. |
-
+| Código HTTP | Escenario Estándar | Acción / Significado en el Backend |
+|-------------|--------------------|------------------------------------|
+| **200 OK** | Lectura o actualización exitosa | La petición se procesó correctamente. En consultas (GET), retorna el objeto o lista (una lista vacía retorna `[]` con 200, nunca 404). |
+| **201 Created** | Escritura exitosa | Se creó y persistió un nuevo recurso en la base de datos de forma exitosa tras un POST. |
+| **400 Bad Request** | Error de validación | El payload JSON enviado por el cliente tiene un formato incorrecto, faltan campos obligatorios o incumple reglas de negocio. |
+| **401 Unauthorized**| Falta de autenticación | El token JWT Bearer está ausente en la cabecera, es inválido o ha expirado. |
+| **403 Forbidden** | Permisos insuficientes | El token JWT es válido, pero el usuario autenticado no posee los roles (`Claims`) necesarios para ejecutar la acción. |
+| **404 Not Found** | Recurso inexistente | El identificador (ID) o la ruta solicitada no existe en la base de datos del microservicio. |
+| **500 Internal Error**| Falla crítica del servidor | Ocurrió un error inesperado (ej. pérdida de conexión a base de datos o excepción no controlada). La traza técnica se oculta por seguridad. |
 
