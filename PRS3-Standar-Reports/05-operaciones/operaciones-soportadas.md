@@ -1,46 +1,68 @@
-# 5 · Operaciones Soportadas y Endpoints REST
+# 5 · Operaciones Soportadas y Matriz de Endpoints
 
-Todas las operaciones del microservicio `vg-ms-paymentservice` están diseñadas bajo el estándar RESTful, procesadas de forma reactiva (`Mono`/`Flux`) y protegidas perimetralmente. 
+Todos los endpoints del backend en el **Equipo 3 (FIDEI NEXUS)** se sirven de forma **reactiva** (`Mono`/`Flux` de Project Reactor). Las operaciones de exportación y generación de reportes no existen como rutas en el backend; son procesos exclusivos del frontend (Angular/Svelte) que consumen los payloads JSON estándar.
 
-Para consumir cualquier endpoint, el cliente debe incluir un encabezado HTTP de autorización válido:
-`Authorization: Bearer <JWT_TOKEN>`
+## 5.1 Reportes Generados en el Cliente (Frontend)
 
-## 5.1 Gestión Transaccional de Pagos
+Los botones de exportación se encuentran en las interfaces de usuario correspondientes. El cliente solicita los datos en formato JSON y utiliza las librerías `jsPDF` o `SheetJS` para construir el documento en memoria.
 
-El controlador principal (`PaymentRest.java`) expone las rutas base bajo el prefijo `/payments`.
+### Módulo de Pagos (`vg-ms-paymentService`)
 
-| Método | Ruta REST | Descripción | Acceso / Roles |
-|--------|-----------|-------------|----------------|
-| **GET** | `/payments` | Lista todos los pagos registrados en el sistema. Los datos retornados incluyen campos enriquecidos de otros microservicios (Books, People, Requests). | Autenticado (Cualquier rol válido) |
-| **POST** | `/payments` | Registra una nueva transacción de pago. Requiere un payload JSON estricto con los datos del monto, método de pago e items involucrados. Dispara bloques `@Transactional`. | Autenticado |
-| **GET** | `/payments/{id}` | Recupera el detalle completo de una transacción específica a través de su identificador único. | Autenticado |
+| Acción en Interfaz | Servicio Angular / Función | Endpoint Consumido (JSON) | Salida |
+|--------------------|----------------------------|---------------------------|--------|
+| Descargar Comprobante | `exportarComprobantePdf(id)` | `GET /api/v1/payments/{id}/full` | `.pdf` (Voucher/A4) |
+| Exportar Ingresos | `exportarConsolidadoExcel()` | `GET /api/v1/payments` | `.xlsx` |
 
-## 5.2 Generación de Reportes Financieros
+### Módulo de Libros (`vg-ms-booksService`)
 
-A diferencia de otros módulos donde el reporte es 100% *client-side*, el microservicio de pagos puede exponer endpoints dedicados a la consolidación de datos sensibles para auditoría, protegidos por validación estricta de roles.
+| Acción en Interfaz | Servicio Angular / Función | Endpoint Consumido (JSON) | Salida |
+|--------------------|----------------------------|---------------------------|--------|
+| Catálogo de Libros | `descargarCatalogoPdf()` | `GET /api/v1/books?status=DISPONIBLE`| `.pdf` (Apaisado) |
+| Inventario / Stock | `exportarInventarioExcel()`| `GET /api/v1/books` | `.xlsx` |
 
-| Método | Ruta REST | Descripción | Acceso / Roles |
-|--------|-----------|-------------|----------------|
-| **GET** | `/payments/reportes/consolidado` | Obtiene la data consolidada de ingresos y transacciones en un periodo definido. | `@PreAuthorize("hasRole('ADMIN')")` |
-| **GET** | `/payments/reportes/auditoria` | Retorna el registro de pagos anulados o marcados con inconsistencias para revisión de administradores. | `@PreAuthorize("hasRole('ADMIN')")` |
+## 5.2 Matriz de Endpoints REST (Fuente de Datos)
 
-*(Nota: Los endpoints de reportes requieren que el token JWT contenga explícitamente el claim del rol `ADMIN` asignado desde Keycloak; de lo contrario, el servidor responderá con un error `403 Forbidden`).*
+A continuación, se detalla el contrato de operaciones expuestas por los microservicios del Equipo 3 a través del API Gateway. Todos los endpoints requieren autenticación (Bearer JWT) y retornan `application/json`.
 
-## 5.3 Documentación Dinámica (OpenAPI / Swagger)
+### Dominio de Pagos — `/api/v1/payments`
 
-Para facilitar la integración con el equipo de Frontend y asegurar que el contrato de la API esté siempre actualizado, el microservicio expone su propia documentación interactiva autogenerada mediante Springdoc OpenAPI.
+| Método | Ruta Específica | Descripción de la Operación |
+|--------|-----------------|-----------------------------|
+| `POST` | `/` | Registra una nueva transacción de pago. |
+| `GET` | `/` | Lista el historial de transacciones (paginado). |
+| `GET` | `/{id}` | Obtiene los datos crudos de un pago específico. |
+| `GET` | `/{id}/full` | Obtiene el pago enriquecido (resuelve datos de persona y libro vía `WebClient`). |
+| `PATCH`| `/{id}/status` | Actualiza el estado del pago (ej. `COMPLETADO`, `ANULADO`). |
+| `GET` | `/customer/{peopleId}`| Historial de compras de un cliente específico. |
 
-Estas rutas son de acceso público (solo lectura de la documentación) y se configuran desde el `application.yml`:
+### Dominio de Libros — `/api/v1/books`
 
-| Ruta REST | Formato / Interfaz | Descripción |
-|-----------|--------------------|-------------|
-| `/api-docs` | JSON | Definición cruda del esquema OpenAPI 3.0 con todos los esquemas de petición y respuesta. |
-| `/swagger-ui.html` | Interfaz Web | Consola visual e interactiva de Swagger UI para explorar y probar los endpoints manualmente. |
+| Método | Ruta Específica | Descripción de la Operación |
+|--------|-----------------|-----------------------------|
+| `POST` | `/` | Registra un nuevo libro en el catálogo. |
+| `PUT` | `/{id}` | Actualiza la información completa de un libro. |
+| `GET` | `/` | Lista el catálogo (soporta filtros por categoría o estado). |
+| `GET` | `/{id}` | Obtiene el detalle de un libro específico. |
+| `PATCH`| `/{id}/stock` | Incrementa o reduce el stock disponible (operación transaccional). |
+| `DELETE`| `/{id}` | Baja lógica del libro (cambia estado a `INACTIVO`). |
 
-## 5.4 Flujo de Respuestas y Manejo de Errores
+## 5.3 Integración Inter-servicio (WebClient)
 
-Cada endpoint garantiza devolver una respuesta estandarizada:
+Para construir la respuesta enriquecida del endpoint `GET /api/v1/payments/{id}/full` necesaria para imprimir el Comprobante en PDF, el microservicio de pagos actúa como orquestador y se comunica asíncronamente con otros dominios:
 
-*   **Peticiones Exitosas (2xx):** Retornan directamente el objeto JSON (`Payment` o `List<Payment>`). Si una consulta de lista está vacía, se retorna HTTP 200 con un arreglo vacío `[]`.
-*   **Excepciones de Negocio (4xx):** Respuestas con estructura de error detallando el motivo (ej. saldo insuficiente, referencia duplicada).
-*   **Excepciones de Servidor (5xx):** Capturadas globalmente por interceptores para no exponer trazas de código fuente (Stacktraces) al cliente frontend, devolviendo únicamente el `status`, `error`, `path` y `timestamp`.
+| Microservicio Origen | Llama a Microservicio Destino | Propósito en el Reporte / Documento |
+|----------------------|-------------------------------|-------------------------------------|
+| `vg-ms-paymentService` | `vg-ms-peopleService` | Obtener nombres, apellidos y DNI del cliente para la cabecera del comprobante. |
+| `vg-ms-paymentService` | `vg-ms-booksService` | Obtener el título, autor y precio unitario del ítem adquirido. |
+
+## 5.4 Protocolo de Códigos HTTP (Transaccional)
+
+Las operaciones respetan estrictamente la semántica HTTP definida en el capítulo 2:
+
+*   **200 OK:** Lectura exitosa de catálogos o transacciones.
+*   **201 Created:** Pago registrado exitosamente (retorna el ID generado) o Libro creado.
+*   **400 Bad Request:** Payload inválido (ej. intento de pago con monto negativo).
+*   **403 Forbidden:** Intento de modificación de stock sin el rol de `INVENTORY_ADMIN`.
+*   **404 Not Found:** ID de libro o comprobante inexistente.
+*   **409 Conflict:** Intento de compra de un libro sin stock disponible.
+*   **503 Service Unavailable:** Falla de resiliencia (ej. `vg-ms-peopleService` no responde al intentar generar el pago enriquecido).
