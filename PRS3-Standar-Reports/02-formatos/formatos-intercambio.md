@@ -42,3 +42,28 @@ El servicio expone la información del catálogo. El payload de respuesta omite 
   "category": "Tecnología",
   "status": "DISPONIBLE"
 }
+```
+
+### Ejemplo: Dominio de Pagos (`vg-ms-paymentService`)
+
+El servicio requiere un payload de entrada (POST) estricto para procesar la transacción. Los campos autogenerados (`id`, `createdAt`) no se envían en la petición.
+
+```json
+{
+  "tenantId": 1,
+  "peopleId": 101,
+  "amount": 150.50,
+  "paymentMethod": "TRANSFERENCIA",
+  "reference": "VOUCHER-9988",
+  "paymentDate": "2026-09-25T10:30:00",
+  "items": [
+    {
+      "bookId": 5,
+      "quantity": 2
+    }
+  ]
+}
+```
+
+
+
