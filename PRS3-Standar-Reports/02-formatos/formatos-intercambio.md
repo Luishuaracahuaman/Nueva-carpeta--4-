@@ -80,19 +80,19 @@ Para garantizar un estándar de comunicación uniforme entre el API Gateway, el 
 | **500 Internal Error**| Falla crítica del servidor | Ocurrió un error inesperado (ej. pérdida de conexión a base de datos o excepción no controlada). La traza técnica se oculta por seguridad. |
 
 
-## 2.5 Criterio de Selección de Formato (Reportes)
+## 2.5 Criterio de Selección de Formato (Reportes FIDEI NEXUS)
 
-El siguiente diagrama detalla el flujo de decisión para la generación y exportación de reportes desde el cliente frontend, dependiendo del módulo y el formato requerido por el usuario[cite: 5, 6].
+El siguiente diagrama detalla el flujo de decisión para la generación y exportación de reportes desde el cliente frontend, adaptado a los dominios del Equipo 3 (Libros y Pagos):
 
 ```mermaid
 graph TD
-    A[Necesidad de reporte] --> B{¿Módulo?}
+    A[Generación de Reporte] --> B{¿Dominio?}
     
-    B -- Emergencias --> C{¿Formato?}
-    B -- Recursos --> D{¿Formato?}
+    B -- Pagos --> C{¿Tipo de Documento?}
+    B -- Libros --> D{¿Formato de Catálogo?}
     
-    C -- PDF --> E["jsPDF + autoTable<br>Emergencias: vertical A4"]
-    C -- Excel --> F["SheetJS<br>2 hojas: detalle + bitácora"]
+    C -- Comprobante/Voucher --> E["PDF (jsPDF)<br>Formato: Vertical A4"]
+    C -- Auditoría Financiera --> F["Excel (SheetJS)<br>2 hojas: Resumen + Transacciones"]
     
-    D -- PDF --> G["jsPDF + autoTable<br>landscape A4, lazy import"]
-    D -- Excel --> H["SheetJS<br>2 hojas: datos + resumen, la..."]
+    D -- PDF --> G["PDF (jsPDF + autoTable)<br>Formato: Landscape A4"]
+    D -- Excel --> H["Excel (SheetJS)<br>1 hoja: Inventario y Stock"]
