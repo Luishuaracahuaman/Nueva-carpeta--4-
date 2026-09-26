@@ -80,19 +80,26 @@ Para garantizar un estándar de comunicación uniforme entre el API Gateway, el 
 | **500 Internal Error**| Falla crítica del servidor | Ocurrió un error inesperado (ej. pérdida de conexión a base de datos o excepción no controlada). La traza técnica se oculta por seguridad. |
 
 
-## 2.5 Criterio de Selección de Formato (Reportes FIDEI NEXUS)
+## 2.5 Motores y Tecnologías de Salida (Reportes)
 
-El siguiente diagrama detalla el flujo de decisión para la generación y exportación de reportes desde el cliente frontend, adaptado a los dominios del Equipo 3 (Libros y Pagos):
+En FIDEI NEXUS, el backend (`vg-ms-paymentService` y `vg-ms-booksService`) se limita a transmitir la data pura a través de endpoints JSON. La responsabilidad de generar los documentos finales recae completamente en el cliente.
 
-```mermaid
-graph TD
-    A[Generación de Reporte] --> B{¿Dominio?}
-    
-    B -- Pagos --> C{¿Tipo de Documento?}
-    B -- Libros --> D{¿Formato de Catálogo?}
-    
-    C -- Comprobante/Voucher --> E["PDF (jsPDF)<br>Formato: Vertical A4"]
-    C -- Auditoría Financiera --> F["Excel (SheetJS)<br>2 hojas: Resumen + Transacciones"]
-    
-    D -- PDF --> G["PDF (jsPDF + autoTable)<br>Formato: Landscape A4"]
-    D -- Excel --> H["Excel (SheetJS)<br>1 hoja: Inventario y Stock"]
+| Motor / Formato | Ejemplo de Uso | Tipo de Salida | Tecnología Frontend |
+|-----------------|----------------|----------------|---------------------|
+| **PDF Client-Side (Pagos)** | Comprobante de Transacción / Voucher de Pago | `.pdf` (Formato Ticket / A4) | `jsPDF` |
+| **Excel Client-Side (Pagos)** | Consolidado de transacciones e ingresos financieros | `.xlsx` (Multi-hoja) | `SheetJS (xlsx)` |
+| **PDF Client-Side (Libros)** | Catálogo general de libros disponibles | `.pdf` (A4 Horizontal / Apaisado) | `jsPDF + jspdf-autotable` |
+| **Excel Client-Side (Libros)**| Reporte de inventario y control de stock | `.xlsx` (Descargado en navegador)| `SheetJS (xlsx)` |
+
+> **Regla de Desarrollo Estricta:** No existen librerías de generación de reportes en el backend (como `iText`, `Apache POI` o `JasperReports`). Toda la generación y renderización de PDFs y Excels ocurre en el navegador mediante Angular/Svelte.
+
+## 2.6 Convenciones de Nomenclatura de Archivos
+
+Al momento de que el usuario descargue un reporte desde la interfaz, los archivos autogenerados deben respetar la siguiente nomenclatura estandarizada:
+
+| Módulo | Documento PDF | Documento Excel |
+|--------|---------------|-----------------|
+| **Transacciones / Pagos** | `Comprobante_Pago_{ID}.pdf` | `Reporte_Ingresos_{YYYY-MM-DD}.xlsx` |
+| **Catálogo de Libros** | `Catalogo_Libros.pdf` | `Inventario_Stock_{YYYY-MM-DD}.xlsx` |
+
+
