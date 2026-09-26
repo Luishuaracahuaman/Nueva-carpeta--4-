@@ -50,7 +50,6 @@ Los microservicios del ecosistema y la aplicación cliente están estructurados 
 | `vg-ms-booksService` | Render / VPS Valle Grande | PostgreSQL (Neon Tech) |
 | `Frontend (Web / UI)` | Vercel / Netlify / Firebase | — |
 
-```
 ## 4.5 Configuración de CORS y Seguridad Perimetral
 
 El único punto de acceso público expuesto a la red es el API Gateway (`:9000`). Toda la comunicación interna entre microservicios ocurre exclusivamente dentro de la malla interna (`vg-network`). El Gateway es el único responsable de configurar las políticas de Origen Cruzado (CORS) para permitir el acceso exclusivo desde clientes autorizados:
@@ -60,4 +59,7 @@ CORS_ALLOWED_ORIGINS: >
   http://localhost:4200,
   http://localhost:5173,
   [https://fideinexus.vallegrande.edu.pe](https://fideinexus.vallegrande.edu.pe)
+
+
+
 
