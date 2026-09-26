@@ -22,7 +22,7 @@ El diseño arquitectónico prioriza la consistencia de los datos, la atomicidad 
 3. **Seguridad Zero-Trust y Delegación de Identidad:** El microservicio opera bajo un modelo *stateless*. La autenticación y autorización se delegan completamente a un proveedor de identidad externo (Keycloak) mediante la validación criptográfica de tokens JWT (OAuth2 Resource Server).
 4. **Infraestructura Cloud-Native y Efímera:** Adopción del patrón *Database-per-Service* alojado en la nube (Neon Tech Serverless Postgres). El contenedor de la aplicación se despliega en Render, garantizando que la infraestructura sea inmutable, escalable e independiente del entorno de desarrollo local.
 
-## 2.4 Códigos de Estado HTTP Semánticos
+## Códigos de Estado HTTP Semánticos
 
 Para garantizar un estándar de comunicación uniforme entre el API Gateway, el Frontend y todos los microservicios del ecosistema FIDEI NEXUS, se establece el uso estricto de los siguientes códigos HTTP:
 
