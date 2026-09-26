@@ -25,7 +25,7 @@ public class WebClientConfiguration {
         });
     }
 }
-
+```
 ## 4.2 Patrón DTO Enriquecido Multiservicio (Backend)
 
 Para generar comprobantes de pago o catálogos detallados, el microservicio orquestador combina información de múltiples dominios utilizando operadores reactivos (`Mono.zip` o `flatMap`). Esto evita que el frontend tenga que hacer múltiples peticiones HTTP separadas.
@@ -50,7 +50,7 @@ public Mono<PaymentEnrichedResponse> getFullPaymentDetails(Long paymentId) {
         }));
 }
 
-
+```
 ## 4.3 PDF de Comprobantes de Pago — Frontend (Client-Side)
 
 El frontend asume la responsabilidad exclusiva de renderizar los documentos basándose en el JSON enriquecido devuelto por el backend.
@@ -72,7 +72,7 @@ El frontend asume la responsabilidad exclusiva de renderizar los documentos bas�
 │  TOTAL A PAGAR: S/ {amount}                 │
 │  Método de Pago: {paymentMethod}            │
 └─────────────────────────────────────────────┘
-
+```
 ## 4.4 Excel de Consolidado Financiero — Frontend (Client-Side)
 
 ### Estructura del Libro (Workbook)
