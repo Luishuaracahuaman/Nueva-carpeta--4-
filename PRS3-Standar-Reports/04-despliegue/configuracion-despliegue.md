@@ -41,18 +41,24 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 ## 4.4 Matriz de Despliegue en la Nube (Cloud Deployment)
 
-Los microservicios del ecosistema y la aplicación cliente están estructurados en contenedores listos para su despliegue continuo (CI/CD) en plataformas PaaS o VPS.
+Todos los microservicios del ecosistema FIDEI NEXUS y la aplicación cliente están estructurados en contenedores listos para su despliegue continuo (CI/CD) en plataformas PaaS o VPS. La siguiente matriz cubre todos los dominios del proyecto (PRS3):
 
 | Componente del Sistema | Entorno / Plataforma Recomendada | Motor de Persistencia |
 |------------------------|----------------------------------|-----------------------|
+| `prs-eureka-server` | Render / VPS Valle Grande | — |
 | `vg-ms-gateway` | Render / VPS Valle Grande | — |
-| `vg-ms-paymentService` | Render / VPS Valle Grande | PostgreSQL (Neon Tech) |
+| `vg-ms-auth` | Render / VPS Valle Grande | PostgreSQL |
 | `vg-ms-booksService` | Render / VPS Valle Grande | PostgreSQL (Neon Tech) |
-| `Frontend (Web / UI)` | Vercel / Netlify / Firebase | — |
+| `vg-ms-paymentService` | Render / VPS Valle Grande | PostgreSQL (Neon Tech) |
+| `vg-ms-peopleService` | Render / VPS Valle Grande | PostgreSQL |
+| `vg-ms-requestsService`| Render / VPS Valle Grande | PostgreSQL |
+| `Frontend FIDEI NEXUS` | Vercel / Netlify / Firebase | — |
 
 ## 4.5 Configuración de CORS y Seguridad Perimetral
 
-El único punto de acceso público expuesto a la red es el API Gateway (`:9000`). Toda la comunicación interna entre microservicios ocurre exclusivamente dentro de la malla interna (`vg-network`). El Gateway es el único responsable de configurar las políticas de Origen Cruzado (CORS) para permitir el acceso exclusivo desde clientes autorizados:
+El único punto de acceso público expuesto a la red para todo el ecosistema es el API Gateway (`:9000`). Toda la comunicación interna entre los distintos microservicios (Pagos, Libros, Personas, Solicitudes) ocurre exclusivamente dentro de la malla interna aislada (`vg-network`). 
+
+El Gateway es el único responsable de centralizar y configurar las políticas de Origen Cruzado (CORS) para permitir el acceso exclusivo desde las interfaces cliente autorizadas del PRS:
 
 ```yaml
 CORS_ALLOWED_ORIGINS: >
