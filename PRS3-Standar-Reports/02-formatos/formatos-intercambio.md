@@ -1,47 +1,44 @@
 # 2 · Formatos de Intercambio de Datos y Estándares API
 
-A diferencia de los módulos orientados a la exportación de documentos (PDF/Excel), el microservicio transaccional `vg-ms-paymentservice` opera exclusivamente como un proveedor y consumidor de APIs REST. Por lo tanto, el formato estándar de intercambio de información es **JSON (JavaScript Object Notation)**.
+A diferencia de las arquitecturas monolíticas o los módulos frontend encargados de exportar documentos (PDF/Excel), los microservicios del backend en FIDEI NEXUS operan exclusivamente como proveedores y consumidores de APIs RESTful. Por lo tanto, el único formato estándar y oficial de intercambio de información es **JSON (JavaScript Object Notation)**.
 
 ## 2.1 Tecnologías de Serialización y Mapeo
 
-| Tipo de Intercambio | Tecnología / Librería | Uso Específico |
-|---------------------|-----------------------|----------------|
-| **Capa Web (REST)** | Jackson (`spring-boot-starter-json`) | Serialización/Deserialización de payloads HTTP. |
-| **Capa de Persistencia** | Spring Data R2DBC | Mapeo reactivo entre objetos Java y registros PostgreSQL. |
-| **Integración Externa** | WebClient (Spring WebFlux) | Consumo asíncrono de APIs externas (Books, People, Requests) esperando respuestas en JSON. |
+Para garantizar una comunicación eficiente y reactiva entre el cliente (Frontend), el API Gateway y los microservicios internos, se estandariza el uso de las siguientes herramientas:
 
-## 2.2 Estándares para Tipos de Datos Críticos (Financieros)
+| Capa de Aplicación | Tecnología / Librería | Propósito Estándar |
+|--------------------|-----------------------|--------------------|
+| **Capa Web (REST)** | Jackson (`spring-boot-starter-json`) | Serialización y deserialización automática de payloads HTTP. |
+| **Integración Interna** | `WebClient` (Spring WebFlux) | Consumo asíncrono y no bloqueante de APIs entre microservicios (Ej. Pagos consultando a Libros o Personas). |
+| **Capa de Persistencia**| Spring Data R2DBC | Mapeo reactivo entre objetos Java y registros en bases de datos relacionales (PostgreSQL). |
 
-Para garantizar la integridad y precisión de las transacciones, el equipo establece las siguientes reglas obligatorias de tipado:
+## 2.2 Estándares de Tipos de Datos y Formateo
 
-1. **Manejo de Divisas y Montos:** 
-   * **Prohibido:** El uso de `Double` o `Float`.
-   * **Estándar:** Utilizar exclusivamente `java.math.BigDecimal` para los campos financieros (ej. `amount`) para evitar errores de precisión por coma flotante durante los cálculos o la persistencia.
-2. **Estándar de Fechas y Marcas de Tiempo (Timestamps):**
-   * **Formato:** Todas las fechas deben transmitirse en formato **ISO 8601** (`YYYY-MM-DDTHH:mm:ss`).
-   * **Backend:** Mapeo mediante `java.time.LocalDateTime` (ej. `paymentDate`, `createdAt`, `updatedAt`).
-3. **Control de Nulos en Respuestas:**
-   * Uso de la anotación `@JsonInclude(JsonInclude.Include.NON_NULL)` a nivel de clase para optimizar el ancho de banda, evitando enviar atributos con valor nulo al cliente.
+El **Equipo 3** establece las siguientes reglas obligatorias de tipado para los dominios bajo su responsabilidad (`vg-ms-booksService` y `vg-ms-paymentService`), aplicables como buena práctica para el resto del ecosistema:
 
-## 2.3 Estructura del Payload Transaccional (JSON)
+1. **Datos Financieros y Monetarios:** 
+   * **Regla Estricta:** Queda prohibido el uso de `Double` o `Float` para cálculos financieros debido a la pérdida de precisión por coma flotante.
+   * **Estándar:** Utilizar exclusivamente `java.math.BigDecimal` para atributos como precios, montos de pago e impuestos.
+2. **Fechas y Marcas de Tiempo (Timestamps):**
+   * **Formato de Transmisión:** Todas las fechas en los JSON de entrada y salida deben respetar el estándar **ISO 8601** (`YYYY-MM-DDTHH:mm:ss`).
+   * **Mapeo en Backend:** Utilizar `java.time.LocalDateTime` o `java.time.LocalDate`.
+3. **Optimización de Payloads (Control de Nulos):**
+   * Se debe implementar la anotación `@JsonInclude(JsonInclude.Include.NON_NULL)` a nivel de clase (DTOs y Modelos) para evitar la transmisión de atributos vacíos, optimizando el ancho de banda de la red.
 
-Las peticiones de creación (POST) hacia el endpoint `/payments` deben respetar una estructura de contrato estricta. Los datos autogenerados por el sistema (como `id` o `createdAt`) se omiten en la solicitud y son inyectados por la base de datos.
+## 2.3 Estructura de Contratos JSON (Payloads)
 
-### Ejemplo de Payload (Request - POST)
+Los microservicios deben definir contratos claros separando los datos físicos (base de datos) de los datos enriquecidos (transitorios).
+
+### Ejemplo: Dominio de Libros (`vg-ms-booksService`)
+El servicio expone la información del catálogo. El payload de respuesta omite metadatos internos e incluye la estructura de autores y categorías.
+
 ```json
 {
-  "tenantId": 1,
-  "peopleId": 101,
-  "requestId": 201,
-  "amount": 150.50,
-  "paymentMethod": "TRANSFERENCIA",
-  "reference": "VOUCHER-9988",
-  "paymentDate": "2026-09-25T10:30:00",
-  "status": "COMPLETADO",
-  "items": [
-    {
-      "bookId": 5,
-      "quantity": 2
-    }
-  ]
+  "id": 5,
+  "title": "Arquitectura Cloud-Native",
+  "isbn": "978-3-16-148410-0",
+  "price": 45.50,
+  "stock": 120,
+  "category": "Tecnología",
+  "status": "DISPONIBLE"
 }
