@@ -64,6 +64,18 @@ El servicio requiere un payload de entrada (POST) estricto para procesar la tran
   ]
 }
 ```
+## 2.4 Códigos de Estado HTTP Semánticos
 
+Para que el cliente (Frontend) y el API Gateway puedan orquestar el flujo correctamente, todos los microservicios deben retornar códigos HTTP semánticos y precisos:
+
+| Código HTTP | Escenario Estándar | Acción del Backend |
+|-------------|--------------------|--------------------|
+| **200 OK** | Lectura exitosa | Retorna listas o entidades únicas. Una lista vacía retorna `[]` con estado 200, nunca 404. |
+| **201 Created** | Escritura exitosa | Se insertó un nuevo registro (ej. creación de un libro o registro de un pago). |
+| **400 Bad Request** | Fallo de validación | El JSON enviado por el cliente tiene un formato incorrecto o incumple reglas de negocio. |
+| **401 Unauthorized**| Seguridad | Token JWT ausente, inválido o expirado. |
+| **403 Forbidden** | Permisos | Token válido, pero el usuario no posee el rol necesario (ej. intento de borrar un catálogo sin rol `ADMIN`). |
+| **404 Not Found** | Recurso inexistente | Se solicitó un recurso específico por ID que no existe en la base de datos. |
+| **500 Internal Error**| Falla crítica | Caída de base de datos, error de R2DBC o excepción no controlada. La traza de error se oculta por seguridad. |
 
 
